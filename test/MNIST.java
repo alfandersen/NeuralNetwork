@@ -67,17 +67,18 @@ class MNISTTest {
         // Hard coded resource root for the win!
         MNIST dataset = new MNIST("./resources/");
 
-        int[] layerSizes = {MNIST.pixelsPerImage, 16,16, MNIST.labelAmount};
+        int[] layerSizes = {MNIST.pixelsPerImage, 150,20, MNIST.labelAmount};
         long randomSeed = 1234L;
 
         // My 4 core cpu seems to starts benefiting from a parallel network with a hidden layer of around 100 units
         // accumulating to a total of 78,400 weights between the input and first hidden layer.
-        NeuralNetwork nn = new NeuralNetwork(layerSizes, randomSeed);
-//        NeuralNetwork nn = new ParallelNeuralNetwork(layerSizes, randomSeed);
+//        NeuralNetwork nn = new NeuralNetwork(layerSizes, randomSeed);
+        ParallelNeuralNetwork nn = new ParallelNeuralNetwork(layerSizes, randomSeed);
 
         System.out.printf("LAYER STRUCTURE: %s\n", Arrays.toString(layerSizes));
         System.out.printf("LEARNING RATE =  %s\n", "0.5/(1+epoch)+0.01");
         System.out.printf("RANDOM SEED:     %d\n", randomSeed);
+        System.out.printf("Parallelization: %s\n", Arrays.toString(nn.getParallelization()));
 
         int testFrequency = 5;
         int printFrequency = 2000;
@@ -91,7 +92,7 @@ class MNISTTest {
                 if(i % printFrequency == 0) {
                     double avgTime = (1E-9*(System.nanoTime()-time))/printFrequency;
                     long estmTime = (long)(MNIST.trainAmount*avgTime);
-                    System.out.printf("\rEpoch: %3s\tSet: %5s\tEstimated epoch time: %d:%02d ", epoch, i, estmTime/60, estmTime%60);
+                    System.out.printf("\rEpoch: %3s\tSet: %5s\tEstimated epoch time: %d:%02d", epoch, i, estmTime/60, estmTime%60);
                     time = System.nanoTime();
                 }
             }

@@ -125,63 +125,74 @@ public class NeuralNetwork {
     }
 
     void feedForward(double[] input){
-        /*  Initialize input values.
-            output of an input unit is its actual input value   */
+        // Initialize input values.
         for(int nj = 0; nj < neurons[0].length; nj++)
+            // output of an input unit is its actual input value
             neurons[0][nj].value = input[nj];
 
 
-        /*  Move forward through the layers
-            for each hidden or output layer unit j:
-                compute the net input of unit j with respect to the previous layer, i:      I[j] = ∑ (w[i,j]*O[i]) + θ[j] ;
-                compute the output of each unit j:                                          O[j] = sigmoid(I[j]) ;  */
+        // Move forward through the layers
         for(int lj = 1; lj < neurons.length; lj++){
-            int li = lj-1;
-            for(int nj = 0; nj < neurons[lj].length; nj++){
-                double sum = neurons[lj][nj].bias;
-                for(int ni = 0; ni < neurons[li].length; ni++){
-                    sum += neurons[li][ni].value * w[li][ni][nj];
-                }
-                neurons[lj][nj].value = sigmoid(sum);
+            computeLayer(lj);
+        }
+    }
+
+    void computeLayer(int lj){
+        int li = lj-1;
+        // for each hidden or output layer unit j:
+        for(int nj = 0; nj < neurons[lj].length; nj++){
+            // compute the net input of unit j with respect to the previous layer, i:  I[j] = ∑ (w[i,j]*O[i]) + θ[j]
+            double sum = neurons[lj][nj].bias;
+            for(int ni = 0; ni < neurons[li].length; ni++){
+                sum += neurons[li][ni].value * w[li][ni][nj];
             }
+            // compute the output of each unit j:   O[j] = sigmoid(I[j]) ;
+            neurons[lj][nj].value = sigmoid(sum);
         }
     }
 
     void backPropagate(double[] target){
-        /*  Compute Output Error
-            for each unit j in the output layer
-                Err[j] = O[j] * ( 1 − O[j] ) * ( T[j] − O[j] ) ;  */
+        // Compute Output Error for each unit j in the output layer
         for(int nj = 0; nj < neurons[outputLayer].length; nj++){
+            // Err[j] = O[j] * ( 1 − O[j] ) * ( T[j] − O[j] ) ;
             double deltaOut = target[nj] - neurons[outputLayer][nj].value;
             err[outputLayer][nj] = neurons[outputLayer][nj].value * (1 - neurons[outputLayer][nj].value) * deltaOut;
         }
 
-        /*  Compute Hidden Error
-            for each unit j in the hidden layers, from the last to the first hidden layer
-                compute the error with respect to the next higher layer, k:         Err[j] = O[j] ( 1 − O[j] ) ∑ (Err[k] * w[j,k]) ;    */
-        for(int lk = outputLayer; lk > 0; lk--) {
-            int lj = lk-1;
-            for (int nj = 0; nj < neurons[lj].length; nj++) {
-                err[lj][nj] = 0;
-                for(int nk = 0; nk < neurons[lk].length; nk++) {
-                    err[lj][nj] += err[lk][nk] * w[lj][nj][nk];
-                }
-                err[lj][nj] *= neurons[lj][nj].value * (1 - neurons[lj][nj].value);
-            }
+        // Compute the hidden error for each layer moving backwards from output layer to input layer
+        for(int lj = outputLayer-1; lj >= 0; lj--) {
+            computeHiddenError(lj);
         }
 
-        /*  Update Weights and Bias
-            for each weight w[i,j] and bias θ[j] in network:
-                update weight:      w[i,j] = w[i,j] + leaning_rate * Err[j] * O[i] ;
-                update bias:        θ[j] = θ[j] + leaning_rate * Err[j] ;  */
-        for(int li = 0; li < outputLayer; li++){
-            int lj = li+1;
-            for(int nj = 0; nj < neurons[lj].length; nj++){
-                for(int ni = 0; ni < neurons[li].length; ni++){
-                    w[li][ni][nj] += learningRate * err[lj][nj] * neurons[li][ni].value;
-                }
-                neurons[lj][nj].bias += learningRate * err[lj][nj];
+        // Update Weights and Bias for each weight w[i,j] and bias θ[j] in network:
+        for(int lj = 1; lj <= outputLayer; lj++){
+            updateWeightsAndBiases(lj);
+        }
+    }
+
+    void computeHiddenError(int lj){
+        int lk = lj+1;
+        // Compute Hidden Error for each unit j in the hidden layer lj
+        for (int nj = 0; nj < neurons[lj].length; nj++) {
+            // Err[j] = O[j] ( 1 − O[j] ) ∑ (Err[k] * w[j,k]) ;
+            err[lj][nj] = 0;
+            for(int nk = 0; nk < neurons[lk].length; nk++) {
+                err[lj][nj] += err[lk][nk] * w[lj][nj][nk];
             }
+            err[lj][nj] *= neurons[lj][nj].value * (1 - neurons[lj][nj].value);
+        }
+    }
+
+    void updateWeightsAndBiases(int lj){
+        int li = lj-1;
+        // Update Weights and Bias for each weight w[i,j] and bias θ[j]
+        for(int nj = 0; nj < neurons[lj].length; nj++){
+            for(int ni = 0; ni < neurons[li].length; ni++){
+                // update weight:  w[i,j] = w[i,j] + leaning_rate * Err[j] * O[i] ;
+                w[li][ni][nj] += learningRate * err[lj][nj] * neurons[li][ni].value;
+            }
+            // update bias:  θ[j] = θ[j] + leaning_rate * Err[j] ;
+            neurons[lj][nj].bias += learningRate * err[lj][nj];
         }
     }
 
