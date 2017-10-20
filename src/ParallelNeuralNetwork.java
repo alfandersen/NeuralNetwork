@@ -12,6 +12,7 @@ import java.util.concurrent.Executors;
  */
 public class ParallelNeuralNetwork extends NeuralNetwork {
     ExecutorService executor;
+    List<Callable<Void>> tasks;
     int processors;
 
     public ParallelNeuralNetwork(int[] layerSizes, long seed){
@@ -27,11 +28,11 @@ public class ParallelNeuralNetwork extends NeuralNetwork {
     void setupExecutor(){
         processors = Runtime.getRuntime().availableProcessors();
         executor = Executors.newWorkStealingPool();
+        tasks = new ArrayList<>();
     }
 
     @Override
     void feedForward(double[] input) {
-        List<Callable<Void>> tasks = new ArrayList<>();
 
         /*  Initialize input values.
             output of an input unit is its actual input value   */
@@ -45,7 +46,7 @@ public class ParallelNeuralNetwork extends NeuralNetwork {
                 compute the output of each unit j:                                          O[j] = sigmoid(I[j]) ;  */
 
         for(int lj = 1; lj < neurons.length; lj++){
-            tasks = new ArrayList<>();
+            tasks.clear();
             int li = lj-1;
             int lastTo = 0;
             for(int p = 0; p < processors; p++) {
@@ -74,7 +75,6 @@ public class ParallelNeuralNetwork extends NeuralNetwork {
 
     @Override
     void backPropagate(double[] target) {
-        List<Callable<Void>> tasks = new ArrayList<>();
 
         /*  Compute Output Error
             for each unit j in the output layer
