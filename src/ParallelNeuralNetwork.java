@@ -51,7 +51,7 @@ public class ParallelNeuralNetwork extends NeuralNetwork {
                 if(i > 10) parTime += System.nanoTime()-start;
             }
             doParallel[lj] = parTime < seqTime;
-            System.out.printf("%.3f < %.3f\n", 1E-6*parTime, 1E-6*seqTime);
+//            System.out.printf("%.3f < %.3f\n", 1E-6*parTime, 1E-6*seqTime);
         }
     }
 
