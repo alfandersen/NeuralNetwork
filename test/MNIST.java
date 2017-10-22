@@ -8,7 +8,7 @@ import java.util.Arrays;
 /* Some results:
 
 LAYER STRUCTURE: [784, 56, 20, 10]
-LEARNING RATE =  0.5/(1+epoch)+0.01
+LEARNING RATE:   0.5/(1+epoch)+0.01
 RANDOM SEED:     1234
 Epoch:   1	Test Error Rate:   6.99 %
 Epoch:   5	Test Error Rate:   4.00 %
@@ -17,7 +17,7 @@ Epoch:  15	Test Error Rate:   3.72 %
 Epoch:  20	Test Error Rate:   3.69 %
 
 LAYER STRUCTURE: [784, 112, 56, 10]
-LEARNING RATE =  0.5/(1+epoch)+0.01
+LEARNING RATE:   0.5/(1+epoch)+0.01
 RANDOM SEED:     1234
 Epoch:   1	Test Error Rate:   6.11 %
 Epoch:   5	Test Error Rate:   3.67 %
@@ -29,7 +29,7 @@ Epoch:  30	Test Error Rate:   3.14 %
 Epoch:  35	Test Error Rate:   3.16 %
 
 LAYER STRUCTURE: [784, 300, 30, 10]
-LEARNING RATE =  0.5/(1+epoch)+0.01
+LEARNING RATE:   0.5/(1+epoch)+0.01
 RANDOM SEED:     1234
 Epoch:   1	Test Error Rate:   6.12 %
 Epoch:   5	Test Error Rate:   4.02 %
@@ -45,7 +45,7 @@ Epoch:  50	Test Error Rate:   3.17 %
 Training time: 47 minutes with parallel implementation.
 
 LAYER STRUCTURE: [784, 112, 112, 10]
-LEARNING RATE =  0.5/(1+epoch)+0.01
+LEARNING RATE:   0.5/(1+epoch)+0.01
 RANDOM SEED:     1234
 Epoch:   1	Test Error Rate:   6.46 %
 Epoch:   5	Test Error Rate:   3.84 %
@@ -61,13 +61,70 @@ Epoch:  50	Test Error Rate:   3.06 %
 Epoch:  55	Test Error Rate:   3.09 %
 Training time: 35 minutes with sequential implementation.
 
+LAYER STRUCTURE: [784, 200, 100, 10] <------------------- BEST SO FAR
+LEARNING RATE:   0.5/(1+epoch)+0.01
+RANDOM SEED:     1234
+PARALLELIZATION: [true, true, false]
+Epoch:   1	Test Error Rate:   5.79 %
+Epoch:   5	Test Error Rate:   3.53 %
+Epoch:  10	Test Error Rate:   3.17 %
+Epoch:  15	Test Error Rate:   3.01 %
+Epoch:  20	Test Error Rate:   2.96 %
+Epoch:  25	Test Error Rate:   2.84 %
+Epoch:  30	Test Error Rate:   2.79 %
+Epoch:  35	Test Error Rate:   2.85 %
+Epoch:  40	Test Error Rate:   2.84 %
+Epoch:  45	Test Error Rate:   2.83 %
+Epoch:  50	Test Error Rate:   2.84 %
+
+LAYER STRUCTURE: [784, 300, 80, 10]
+LEARNING RATE:   0.5/(1+epoch)+0.01
+RANDOM SEED:     1234
+PARALLELIZATION: [true, true, false]
+Epoch:   1	Test Error Rate:   6.80 %
+Epoch:   5	Test Error Rate:   3.53 %
+Epoch:  10	Test Error Rate:   3.07 %
+Epoch:  15	Test Error Rate:   3.03 %
+Epoch:  20	Test Error Rate:   3.00 %
+Epoch:  25	Test Error Rate:   2.92 %
+Epoch:  30	Test Error Rate:   2.90 %
+Epoch:  35	Test Error Rate:   2.88 %
+Epoch:  40	Test Error Rate:   2.89 %
+Epoch:  45	Test Error Rate:   2.90 %
+
+LAYER STRUCTURE: [784, 400, 200, 10]
+LEARNING RATE:   0.5/(1+epoch)+0.01
+RANDOM SEED:     1234
+PARALLELIZATION: [true, true, false]
+Epoch:   1	Test Error Rate:   7.11 %
+Epoch:   5	Test Error Rate:   3.59 %
+Epoch:  10	Test Error Rate:   3.38 %
+Epoch:  15	Test Error Rate:   3.13 %
+Epoch:  20	Test Error Rate:   3.09 %
+Epoch:  25	Test Error Rate:   3.07 %
+Epoch:  30	Test Error Rate:   3.09 %
+
+LAYER STRUCTURE: [784, 200, 100, 50, 10]
+LEARNING RATE:   0.5/(1+epoch)+0.01
+RANDOM SEED:     1234
+PARALLELIZATION: [true, true, false, false]
+Epoch:   1	Test Error Rate:   6.71 %
+Epoch:  10	Test Error Rate:   3.25 %
+Epoch:  20	Test Error Rate:   2.90 %
+Epoch:  30	Test Error Rate:   2.84 %
+Epoch:  40	Test Error Rate:   2.81 %
+Epoch:  50	Test Error Rate:   2.82 %
+Epoch:  60	Test Error Rate:   2.77 %
+Epoch:  70	Test Error Rate:   2.76 %
+Epoch:  80	Test Error Rate:   2.82 %
+
 */
 class MNISTTest {
     public static void main(String[] args) throws IOException {
         // Hard coded resource root for the win!
         MNIST dataset = new MNIST("./resources/");
 
-        int[] layerSizes = {MNIST.pixelsPerImage, 150,20, MNIST.labelAmount};
+        int[] layerSizes = {MNIST.pixelsPerImage, 200,100, MNIST.labelAmount};
         long randomSeed = 1234L;
 
         // My 4 core cpu seems to starts benefiting from a parallel network with a hidden layer of around 100 units
@@ -76,24 +133,27 @@ class MNISTTest {
         ParallelNeuralNetwork nn = new ParallelNeuralNetwork(layerSizes, randomSeed);
 
         System.out.printf("LAYER STRUCTURE: %s\n", Arrays.toString(layerSizes));
-        System.out.printf("LEARNING RATE =  %s\n", "0.5/(1+epoch)+0.01");
+        System.out.printf("LEARNING RATE:   %s\n", "0.5/(1+epoch)+0.01");
         System.out.printf("RANDOM SEED:     %d\n", randomSeed);
-        System.out.printf("Parallelization: %s\n", Arrays.toString(nn.getParallelization()));
+        System.out.printf("PARALLELIZATION: %s\n", Arrays.toString(nn.getParallelization()));
 
-        int testFrequency = 5;
-        int printFrequency = 2000;
+        int testFrequency = 10;
+//        int printFrequency = 200;
 
-        for(int epoch = 1; epoch <= 100; epoch++) {
+        for(int epoch = 1; epoch <= 1000; epoch++) {
             nn.setLearningRate(0.5/(1+epoch)+0.01);
             long time = System.nanoTime();
+            int lastPrint = 0;
             for (int i = 0; i < MNIST.trainAmount; i++) {
                 double[][] trainingPair = dataset.getTrainingPair(i);
                 nn.train(trainingPair[0], trainingPair[1]);
-                if(i % printFrequency == 0) {
-                    double avgTime = (1E-9*(System.nanoTime()-time))/printFrequency;
-                    long estmTime = (long)(MNIST.trainAmount*avgTime);
-                    System.out.printf("\rEpoch: %3s\tSet: %5s\tEstimated epoch time: %d:%02d", epoch, i, estmTime/60, estmTime%60);
+                if(i == 0 || System.nanoTime() > time + 1E9) {
+                    double avgTime = (1E-9*(System.nanoTime()-time))/(i-lastPrint);
+                    int estmTime = (int)(MNIST.trainAmount*avgTime);
+                    int timeLeft = (estmTime*(MNIST.trainAmount-i))/MNIST.trainAmount;
+                    System.out.printf("\rEpoch: %3s\tTraining sets: %5s\tEstimated epoch completion in: %d:%02d", epoch, i+1, timeLeft/60, timeLeft%60);
                     time = System.nanoTime();
+                    lastPrint = i;
                 }
             }
 
@@ -207,11 +267,11 @@ public class MNIST {
         testPairs = loadDataPairs(testImageFile, testLabelFile, testAmount);
     }
 
-    public double[][] getTrainingPair(int index) throws IOException {
+    public double[][] getTrainingPair(int index) {
         return trainPairs[index];
     }
 
-    public double[][] getTestPair(int index) throws IOException {
+    public double[][] getTestPair(int index) {
         return testPairs[index];
     }
 
