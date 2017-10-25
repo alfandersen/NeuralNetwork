@@ -72,16 +72,16 @@ public class SeqParTest {
     static boolean testEquality(NeuralNetwork a, NeuralNetwork b){
         for(int lj = 0; lj < layers.length; lj++){
             for(int nj = 0; nj < layers[lj]-1; nj++){
-                if(a.neurons[lj][nj].value != b.neurons[lj][nj].value) {
-                    System.out.println("FAIL on neuron "+lj+","+nj + "   "+ a.neurons[lj][nj].value +" != "+ b.neurons[lj][nj].value);
+                if(a.neurons[lj][nj] != b.neurons[lj][nj]) {
+                    System.out.println("FAIL on neuron "+lj+","+nj + "   "+ a.neurons[lj][nj] +" != "+ b.neurons[lj][nj]);
                     return false;
                 }
-                if(a.neurons[lj][nj].bias != b.neurons[lj][nj].bias) {
-                    System.out.println("FAIL on bias "+lj+","+nj + "   "+ a.neurons[lj][nj].bias +" != "+ b.neurons[lj][nj].bias);
+                if(a.bias[lj][nj] != b.bias[lj][nj]) {
+                    System.out.println("FAIL on bias "+lj+","+nj + "   "+ a.bias[lj][nj] +" != "+ b.bias[lj][nj]);
                     return false;
                 }
-                if(!Arrays.equals(a.w[lj][nj], b.w[lj][nj])) {
-                    System.out.println("FAIL on weight "+lj+","+nj + "   "+ Arrays.toString(a.w[lj][nj]) + " != "+ Arrays.toString(b.w[lj][nj]));
+                if(!Arrays.equals(a.weights[lj][nj], b.weights[lj][nj])) {
+                    System.out.println("FAIL on weight "+lj+","+nj + "   "+ Arrays.toString(a.weights[lj][nj]) + " != "+ Arrays.toString(b.weights[lj][nj]));
                     return false;
                 }
             }

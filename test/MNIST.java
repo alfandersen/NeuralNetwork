@@ -120,7 +120,7 @@ Epoch:  80	Test Error Rate:   2.82 %
 
 */
 class MNISTTest {
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws IOException, InterruptedException {
         // Hard coded resource root for the win!
         MNIST dataset = new MNIST("./resources/");
 
@@ -135,9 +135,9 @@ class MNISTTest {
         System.out.printf("LAYER STRUCTURE: %s\n", Arrays.toString(layerSizes));
         System.out.printf("LEARNING RATE:   %s\n", "0.5/(1+epoch)+0.01");
         System.out.printf("RANDOM SEED:     %d\n", randomSeed);
-        System.out.printf("PARALLELIZATION: %s\n", Arrays.toString(nn.getParallelization()));
+//        System.out.printf("PARALLELIZATION: %s\n", Arrays.toString(nn.getParallelization()));
 
-        int testFrequency = 10;
+        int testFrequency = 1;
 //        int printFrequency = 200;
 
         for (int epoch = 1; epoch <= 1000; epoch++) {

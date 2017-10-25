@@ -12,11 +12,13 @@ import java.util.Random;
  */
 public class NeuralNetwork {
     Random random;
-    Neuron[][] neurons;
-    int outputLayer;
-    double[][][] w;
-    double learningRate;
+//    Neuron[][] neurons;
+    double[][] neurons;
+    double[][] bias;
     double[][] err;
+    double[][][] weights;
+    int outputLayer;
+    double learningRate;
 
     /**
      * Constructor which takes an array with layer sizes for the network and a seed for the random initialization of weights and biases.
@@ -53,23 +55,30 @@ public class NeuralNetwork {
         setupLayers(layerSizes);
     }
 
+    NeuralNetwork() {
+
+    }
+
     private void setupLayers(int[] layerSizes){
         learningRate = 0.1;
-        neurons = new Neuron[layerSizes.length][];
-        w = new double[layerSizes.length-1][][];
+        neurons = new double[layerSizes.length][];
+        bias = new double[layerSizes.length][];
         err = new double[neurons.length][];
+        weights = new double[layerSizes.length-1][][];
         outputLayer = neurons.length-1;
         for(int lj = 0; lj < layerSizes.length; lj++){
             int li = lj-1;
-            neurons[lj] = new Neuron[layerSizes[lj]];
+            neurons[lj] = new double[layerSizes[lj]];
+            bias[lj] = new double[layerSizes[lj]];
             err[lj] = new double[layerSizes[lj]];
             if(li >= 0)
-                w[li] = new double[layerSizes[li]][layerSizes[lj]];
+                weights[li] = new double[layerSizes[li]][layerSizes[lj]];
             for(int nj = 0; nj < neurons[lj].length; nj++) {
-                neurons[lj][nj] = new Neuron();
+//                neurons[lj][nj] = new Neuron();
+                bias[lj][nj] = 1-2*random.nextDouble();
                 if(li >= 0){
                     for (int ni = 0; ni < neurons[li].length; ni++) {
-                        w[li][ni][nj] = 1-2*random.nextDouble();
+                        weights[li][ni][nj] = 1-2*random.nextDouble();
                     }
                 }
             }
@@ -96,7 +105,7 @@ public class NeuralNetwork {
      * @param input Two-dimensional array of double values of the form {{input_set_1},{input_set_2},...,{input_set_n}} where n is the last set in the epoch.
      * @param expected Two-dimensional array of double values of the form {{target_set_1},{target_set_2},...,{target_set_n}} where n is the last set in the epoch.
      */
-    public void trainEpoch(double[][] input, double[][] expected){
+    public void trainEpoch(double[][] input, double[][] expected) throws InterruptedException {
         long time = System.nanoTime();
         String info = "Training epoch ... ";
         System.out.print(info+"  0% complete.");
@@ -123,7 +132,7 @@ public class NeuralNetwork {
 
         double[] out = new double[neurons[outputLayer].length];
         for(int no = 0; no < out.length; no++){
-            out[no] = neurons[outputLayer][no].value;
+            out[no] = neurons[outputLayer][no];
         }
 
         return out;
@@ -147,7 +156,7 @@ public class NeuralNetwork {
         // Initialize input values.
         for(int nj = 0; nj < neurons[0].length; nj++)
             // output of an input unit is its actual input value
-            neurons[0][nj].value = input[nj];
+            neurons[0][nj] = input[nj];
 
 
         // Move forward through the layers
@@ -160,13 +169,13 @@ public class NeuralNetwork {
         int li = lj-1;
         // for each hidden or output layer unit j:
         for(int nj = 0; nj < neurons[lj].length; nj++){
-            // compute the net input of unit j with respect to the previous layer, i:  I[j] = ∑ (w[i,j]*O[i]) + θ[j]
-            double sum = neurons[lj][nj].bias;
+            // compute the net input of unit j with respect to the previous layer, i:  I[j] = ∑ (weights[i,j]*O[i]) + θ[j]
+            double sum = bias[lj][nj];
             for(int ni = 0; ni < neurons[li].length; ni++){
-                sum += neurons[li][ni].value * w[li][ni][nj];
+                sum += neurons[li][ni] * weights[li][ni][nj];
             }
             // compute the output of each unit j:   O[j] = sigmoid(I[j]) ;
-            neurons[lj][nj].value = sigmoid(sum);
+            neurons[lj][nj] = sigmoid(sum);
         }
     }
 
@@ -174,8 +183,8 @@ public class NeuralNetwork {
         // Compute Output Error for each unit j in the output layer
         for(int nj = 0; nj < neurons[outputLayer].length; nj++){
             // Err[j] = O[j] * ( 1 − O[j] ) * ( T[j] − O[j] ) ;
-            double deltaOut = target[nj] - neurons[outputLayer][nj].value;
-            err[outputLayer][nj] = neurons[outputLayer][nj].value * (1 - neurons[outputLayer][nj].value) * deltaOut;
+            double deltaOut = target[nj] - neurons[outputLayer][nj];
+            err[outputLayer][nj] = neurons[outputLayer][nj] * (1 - neurons[outputLayer][nj]) * deltaOut;
         }
 
         // Compute the hidden error for each layer moving backwards from output layer to input layer
@@ -183,7 +192,7 @@ public class NeuralNetwork {
             computeHiddenError(lj);
         }
 
-        // Update Weights and Bias for each weight w[i,j] and bias θ[j] in network:
+        // Update Weights and Bias for each weight weights[i,j] and bias θ[j] in network:
         for(int lj = 1; lj <= outputLayer; lj++){
             updateWeightsAndBiases(lj);
         }
@@ -193,25 +202,25 @@ public class NeuralNetwork {
         int lk = lj+1;
         // Compute Hidden Error for each unit j in the hidden layer lj
         for (int nj = 0; nj < neurons[lj].length; nj++) {
-            // Err[j] = O[j] ( 1 − O[j] ) ∑ (Err[k] * w[j,k]) ;
+            // Err[j] = O[j] ( 1 − O[j] ) ∑ (Err[k] * weights[j,k]) ;
             err[lj][nj] = 0;
             for(int nk = 0; nk < neurons[lk].length; nk++) {
-                err[lj][nj] += err[lk][nk] * w[lj][nj][nk];
+                err[lj][nj] += err[lk][nk] * weights[lj][nj][nk];
             }
-            err[lj][nj] *= neurons[lj][nj].value * (1 - neurons[lj][nj].value);
+            err[lj][nj] *= neurons[lj][nj] * (1 - neurons[lj][nj]);
         }
     }
 
     void updateWeightsAndBiases(int lj){
         int li = lj-1;
-        // Update Weights and Bias for each weight w[i,j] and bias θ[j]
+        // Update Weights and Bias for each weight weights[i,j] and bias θ[j]
         for(int nj = 0; nj < neurons[lj].length; nj++){
             for(int ni = 0; ni < neurons[li].length; ni++){
-                // update weight:  w[i,j] = w[i,j] + leaning_rate * Err[j] * O[i] ;
-                w[li][ni][nj] += learningRate * err[lj][nj] * neurons[li][ni].value;
+                // update weight:  weights[i,j] = weights[i,j] + leaning_rate * Err[j] * O[i] ;
+                weights[li][ni][nj] += learningRate * err[lj][nj] * neurons[li][ni];
             }
             // update bias:  θ[j] = θ[j] + leaning_rate * Err[j] ;
-            neurons[lj][nj].bias += learningRate * err[lj][nj];
+            bias[lj][nj] += learningRate * err[lj][nj];
         }
     }
 
@@ -219,12 +228,12 @@ public class NeuralNetwork {
         return 1 / (1 + Math.exp(-x));
     }
 
-    class Neuron {
-        double value;
-        double bias;
-
-        Neuron(){
-            bias = 1-(2*random.nextDouble());
-        }
-    }
+//    class Neuron {
+//        double value;
+//        double bias;
+//
+//        Neuron(){
+//            bias = 1-(2*random.nextDouble());
+//        }
+//    }
 }
