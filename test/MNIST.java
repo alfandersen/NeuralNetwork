@@ -124,7 +124,7 @@ class MNISTTest {
         // Hard coded resource root for the win!
         MNIST dataset = new MNIST("./resources/");
 
-        int[] layerSizes = {MNIST.pixelsPerImage, 200,100, MNIST.labelAmount};
+        int[] layerSizes = {MNIST.pixelsPerImage, 200, 100, MNIST.labelAmount};
         long randomSeed = 1234L;
 
         // My 4 core cpu seems to starts benefiting from a parallel network with a hidden layer of around 100 units
@@ -140,33 +140,19 @@ class MNISTTest {
         int testFrequency = 10;
 //        int printFrequency = 200;
 
-        for(int epoch = 1; epoch <= 1000; epoch++) {
-            nn.setLearningRate(0.5/(1+epoch)+0.01);
-            long time = System.nanoTime();
-            int lastPrint = 0;
-            for (int i = 0; i < MNIST.trainAmount; i++) {
-                double[][] trainingPair = dataset.getTrainingPair(i);
-                nn.train(trainingPair[0], trainingPair[1]);
-                if(i == 0 || System.nanoTime() > time + 1E9) {
-                    double avgTime = (1E-9*(System.nanoTime()-time))/(i-lastPrint);
-                    int estmTime = (int)(MNIST.trainAmount*avgTime);
-                    int timeLeft = (estmTime*(MNIST.trainAmount-i))/MNIST.trainAmount;
-                    System.out.printf("\rEpoch: %3s\tTraining sets: %5s\tEstimated epoch completion in: %d:%02d", epoch, i+1, timeLeft/60, timeLeft%60);
-                    time = System.nanoTime();
-                    lastPrint = i;
-                }
-            }
+        for (int epoch = 1; epoch <= 1000; epoch++) {
+            nn.setLearningRate(0.5 / (1 + epoch) + 0.01);
+            nn.trainEpoch(dataset.getTrainInputs(), dataset.getTrainLabels());
 
-            if(epoch == 1 || epoch % testFrequency == 0) {
+            if (epoch == 1 || epoch % testFrequency == 0) {
                 int correct = 0;
                 System.out.printf("\rEpoch: %3s\tTesting ...", epoch);
                 for (int i = 0; i < MNIST.testAmount; i++) {
-                    double[][] testPair = dataset.getTestPair(i);
-                    double[] prediction = nn.predict(testPair[0]);
-                    if (maxIndex(prediction) == maxIndex(testPair[1]))
+                    double[] prediction = nn.predict(dataset.getTestInput(i));
+                    if (maxIndex(prediction) == maxIndex(dataset.getTestLabel(i)))
                         correct++;
                 }
-                System.out.printf("\rEpoch: %3s\tTest Error Rate: %8s\n", epoch, String.format("%.2f %s", (100.*(MNIST.testAmount - correct))/ MNIST.testAmount, "%"));
+                System.out.printf("\rEpoch: %3s\tTest Error Rate: %8s\n", epoch, String.format("%.2f %s", (100. * (MNIST.testAmount - correct)) / MNIST.testAmount, "%"));
             }
         }
     }
@@ -255,39 +241,63 @@ public class MNIST {
     public static final int pixelsPerImage = 784;
     public static final int labelAmount =     10;
     private byte[] pixels;
-    private byte[] label;
-    private double[][][] trainPairs;
-    private double[][][] testPairs;
+    private double[][] trainInputs;
+    private double[][] trainLabels;
+    private double[][] testInputs;
+    private double[][] testLabels;
 
     public MNIST(String path) throws IOException {
         this.path = path;
         pixels = new byte[pixelsPerImage];
-        label = new byte[1];
-        trainPairs = loadDataPairs(trainImageFile, trainLabelFile, trainAmount);
-        testPairs = loadDataPairs(testImageFile, testLabelFile, testAmount);
+        loadTrainingSets();
+        loadTestSets();
     }
 
-    public double[][] getTrainingPair(int index) {
-        return trainPairs[index];
+    public double[] getTrainInput(int index){
+        return trainInputs[index];
+    }
+    public double[] getTrainLabel(int index){
+        return trainLabels[index];
+    }
+    public double[] getTestInput(int index){
+        return testInputs[index];
+    }
+    public double[] getTestLabel(int index){
+        return testLabels[index];
     }
 
-    public double[][] getTestPair(int index) {
-        return testPairs[index];
+    public double[][] getTrainInputs() {
+        return trainInputs;
     }
 
-    private double[][][] loadDataPairs(String imageFile, String labelFile, int amount) throws IOException {
-        FileInputStream imageReader = new FileInputStream(path+ imageFile);
-        FileInputStream labelReader = new FileInputStream(path+ labelFile);
+    public double[][] getTrainLabels() {
+        return trainLabels;
+    }
+
+    void loadTrainingSets() throws IOException {
+        FileInputStream imageReader = new FileInputStream(path+ trainImageFile);
+        FileInputStream labelReader = new FileInputStream(path+ trainLabelFile);
         imageReader.skip(16);
         labelReader.skip(8);
-        double[][][] pairs = new double[amount][2][];
-        for(int i = 0; i < amount; i++) {
-            pairs[i][0] = loadImage(imageReader);
-            pairs[i][1] = loadLabel(labelReader);
+        trainInputs = new double[trainAmount][pixelsPerImage];
+        trainLabels = new double[trainAmount][labelAmount];
+        for(int i = 0; i < trainAmount; i++){
+            trainInputs[i] = loadImage(imageReader);
+            trainLabels[i] = loadLabel(labelReader);
         }
-        imageReader.close();
-        labelReader.close();
-        return pairs;
+    }
+
+    void loadTestSets() throws IOException {
+        FileInputStream imageReader = new FileInputStream(path+ testImageFile);
+        FileInputStream labelReader = new FileInputStream(path+ testLabelFile);
+        imageReader.skip(16);
+        labelReader.skip(8);
+        testInputs = new double[testAmount][pixelsPerImage];
+        testLabels = new double[testAmount][labelAmount];
+        for(int i = 0; i < testAmount; i++){
+            testInputs[i] = loadImage(imageReader);
+            testLabels[i] = loadLabel(labelReader);
+        }
     }
 
     private double[] loadImage(FileInputStream stream) throws IOException {

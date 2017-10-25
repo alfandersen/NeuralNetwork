@@ -92,6 +92,25 @@ public class NeuralNetwork {
     }
 
     /**
+     * Train an entire epoch by giving an array of input sets and their corresponding expected outputs.
+     * @param input Two-dimensional array of double values of the form {{input_set_1},{input_set_2},...,{input_set_n}} where n is the last set in the epoch.
+     * @param expected Two-dimensional array of double values of the form {{target_set_1},{target_set_2},...,{target_set_n}} where n is the last set in the epoch.
+     */
+    public void trainEpoch(double[][] input, double[][] expected){
+        long time = System.nanoTime();
+        String info = "Training epoch ... ";
+        System.out.print(info+"  0% complete.");
+        for (int i = 0; i < input.length; i++) {
+            train(input[i], expected[i]);
+            if(System.nanoTime() > time + 1E9) {
+                System.out.printf("\r%s%3d%s complete.", info, 100*i/input.length, "%");
+                time = System.nanoTime();
+            }
+        }
+        System.out.printf("\r%s%3d%s complete.\n", info, 100, "%");
+    }
+
+    /**
      * Feeds an input through the network to predict an output.
      * @param input layer to predict for.
      * @return output layer after the given input has been fed through the network.
